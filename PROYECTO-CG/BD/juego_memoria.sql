@@ -29,6 +29,7 @@ CREATE TABLE Partidas (
     tiempo TIME,
 	fechapartida DATE,
 	resultado BIT,
+	clics INT,
     FOREIGN KEY (idusuario) REFERENCES Usuarios(idusuario),
     FOREIGN KEY (idnivel) REFERENCES Niveles(idnivel)
 );
@@ -59,21 +60,22 @@ WHERE idusuario = 2048;
 -- Visualizar historial de partidas
 SELECT tiempo,
 	fechapartida,
-	IIF(resultado = 1, 'GANADA', 'PERDIDA') AS resultado
+	IIF(resultado = 1, 'GANADA', 'PERDIDA') AS resultado,
+	clics
 FROM Partidas
 WHERE idusuario = 1
 
 -- Consulta para ver el top 10 de usuarios con mejor puntaje
-SELECT TOP 10
-	U.username,
+SELECT U.username,
 	N.descripcion,
 	P.tiempo,
-	P.fechapartida
+	P.fechapartida,
+	P.clics
 FROM Partidas P
 INNER JOIN Usuarios U ON P.idusuario = U.idusuario
 INNER JOIN Niveles N ON P.idnivel = N.idnivel
 WHERE P.resultado = 1
-ORDER BY P.tiempo ASC
+ORDER BY P.clics  ASC;
 
 -- script para restablecer el último valor del autoincremento en el ID 
-DBCC CHECKIDENT ('Usuarios', RESEED, 2)
+DBCC CHECKIDENT ('Partidas', RESEED, 1)
