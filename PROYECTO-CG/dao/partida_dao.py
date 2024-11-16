@@ -6,14 +6,7 @@ class PartidaDAO:
         self.conn = Conexion()
         self.cursor = self.conn.conn.cursor()
     
-    from datetime import datetime, timedelta
-
-class PartidaDAO:
-    def __init__(self):
-        self.conn = Conexion()
-        self.cursor = self.conn.conn.cursor()
-    
-    def insertar_partida(self, idusuario, idnivel, tiempo, resultado):
+    def insertar_partida(self, idusuario, idnivel, tiempo, resultado, clics):
         try:
             # Capturamos la fecha actual
             fechapartida = datetime.now().date()  # Solo la fecha actual
@@ -26,14 +19,14 @@ class PartidaDAO:
             
             tiempo_partida = datetime.strptime(tiempo_str, '%H:%M:%S').time()  # Convertir a objeto TIME
             
-            print(f"Tipos de parámetros: {type(idusuario)}, {type(idnivel)}, {type(tiempo_partida)}, {type(fechapartida)}, {type(resultado)}")
+            print(f"Tipos de parámetros: {type(idusuario)}, {type(idnivel)}, {type(tiempo_partida)}, {type(fechapartida)}, {type(resultado)}, {type(clics)}")
             
             # Consulta de inserción
-            query = """INSERT INTO Partidas (idusuario, idnivel, tiempo, fechapartida, resultado) 
-                    VALUES (?, ?, ?, ?, ?)"""
+            query = """INSERT INTO Partidas (idusuario, idnivel, tiempo, fechapartida, resultado, clics) 
+                    VALUES (?, ?, ?, ?, ?, ?)"""
             
             # Ejecutar la consulta
-            self.cursor.execute(query, (idusuario, idnivel, tiempo_partida, fechapartida, resultado))
+            self.cursor.execute(query, (idusuario, idnivel, tiempo_partida, fechapartida, resultado, clics))
             self.conn.conn.commit()
             
             # Mensaje en consola si la partida se inserta correctamente
@@ -42,7 +35,8 @@ class PartidaDAO:
                   f" - ID Nivel: {idnivel}\n"
                   f" - Tiempo: {tiempo_partida}\n"
                   f" - Fecha de Partida: {fechapartida}\n"
-                  f" - Resultado: {resultado}")
+                  f" - Resultado: {resultado}\n"
+                  f" - Clics: {clics}")
             
         except Exception as e:
             # Imprimir error en consola si ocurre alguna excepción
@@ -57,7 +51,8 @@ class PartidaDAO:
         query = """
             SELECT tiempo,
                 fechapartida,
-                IIF(resultado = 1, 'GANADA', 'PERDIDA') AS resultado
+                IIF(resultado = 1, 'GANADA', 'PERDIDA') AS resultado,
+                clics
             FROM Partidas
             WHERE idusuario = ?
         """
@@ -84,12 +79,13 @@ class PartidaDAO:
                 U.username,
                 N.descripcion,
                 P.tiempo,
-                P.fechapartida
+                P.fechapartida,
+                P.clics
             FROM Partidas P
             INNER JOIN Usuarios U ON P.idusuario = U.idusuario
             INNER JOIN Niveles N ON P.idnivel = N.idnivel
             WHERE P.resultado = 1
-            ORDER BY P.tiempo ASC
+            ORDER BY P.clics ASC
         """
         
         try:
@@ -103,8 +99,9 @@ class PartidaDAO:
                 descripcion = row[1]  # Descripción es el segundo elemento
                 tiempo = str(row[2])  # Tiempo es el tercer elemento
                 fechapartida = row[3].strftime('%Y-%m-%d')  # Fecha es el cuarto elemento
+                clics = row[4] # Clics es el quinto elemento
 
-                top_ten.append((username, descripcion, tiempo, fechapartida))
+                top_ten.append((username, descripcion, tiempo, fechapartida, clics))
 
             return top_ten
         
