@@ -5,7 +5,6 @@ from opengl_widget import OpenGLWidget
 from menu import MenuWindow
 from dao.partida_dao import PartidaDAO
 
-
 class GameWindow(QMainWindow):
     def __init__(self, user_id, level, username=None):
         super().__init__()
@@ -79,6 +78,7 @@ class GameWindow(QMainWindow):
         # Agregar el layout del mensaje al layout principal
         self.layout.addLayout(message_layout)
 
+        
         # Imprimir en consola el tiempo en el que se completó el nivel
         mensaje = QMessageBox()
         mensaje.setWindowTitle("Felicidades")
@@ -89,7 +89,10 @@ class GameWindow(QMainWindow):
         # Agregar partida en la BD usando el `user_id` y `username` actuales
         print(f"Tipo de total_time: {type(self.opengl_widget.total_time)}, Valor: {self.opengl_widget.total_time}")
         partida = PartidaDAO()
-        partida.insertar_partida(self.user_id, self.level, self.opengl_widget.total_time, 1)
+        partida.insertar_partida(self.user_id, self.level, self.opengl_widget.total_time, 1, self.click_count)
+        
+        # Imprimir el total de clics
+        #print(f"Total de clics: {self.click_count}")
         
         QTimer.singleShot(1500, self.show_next_or_return_button)  # Espera 1.5 segundo antes de mostrar el botón
 
