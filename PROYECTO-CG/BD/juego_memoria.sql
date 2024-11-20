@@ -52,7 +52,6 @@ INSERT INTO Niveles VALUES
 SELECT * FROM Usuarios
 SELECT * FROM Partidas
 SELECT * FROM Niveles
-
 -- Eliminar usuario con id no apropiado
 DELETE FROM Usuarios
 WHERE idusuario = 2048;
@@ -74,8 +73,33 @@ SELECT U.username,
 FROM Partidas P
 INNER JOIN Usuarios U ON P.idusuario = U.idusuario
 INNER JOIN Niveles N ON P.idnivel = N.idnivel
-WHERE P.resultado = 1
+WHERE P.resultado = 1 AND P.idnivel > 1
 ORDER BY P.clics  ASC;
+-- Consulta para seleccionar los datos username, tiempo, clics según los once niveles disponibles
+WITH MejorPartidaPorNivel AS (
+    SELECT
+        CONCAT('Nivel ', CAST(N.idnivel AS VARCHAR)) AS Nivel,
+        U.username,
+        P.clics,
+        P.tiempo,
+        ROW_NUMBER() OVER (
+            PARTITION BY N.idnivel
+            ORDER BY P.clics ASC, P.tiempo ASC
+        ) AS rn
+    FROM Partidas P
+    INNER JOIN Usuarios U ON P.idusuario = U.idusuario
+    INNER JOIN Niveles N ON P.idnivel = N.idnivel
+    WHERE P.idusuario = 9 
+      AND P.resultado = 1
+)
+SELECT 
+    Nivel,
+    Username,
+    Clics,
+    CONVERT(VARCHAR, Tiempo, 108) AS Tiempo
+FROM MejorPartidaPorNivel
+WHERE rn = 1
+ORDER BY CAST(SUBSTRING(Nivel, 7, LEN(Nivel)) AS INT);
 
 -- script para restablecer el último valor del autoincremento en el ID 
-DBCC CHECKIDENT ('Partidas', RESEED, 1)
+DBCC CHECKIDENT ('Usuarios', RESEED, 6);
