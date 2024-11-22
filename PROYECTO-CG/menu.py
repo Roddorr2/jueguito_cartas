@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QPushButton, QWidget, QMessageBox, QLineEdit
 from PyQt5.QtCore import Qt
 from dao.usuario_dao import UsuarioDAO
+from level import LevelWindow
 
 class MenuWindow(QWidget):
     def __init__(self):
@@ -19,11 +20,11 @@ class MenuWindow(QWidget):
         """
         self.initUI()
         
-
     def initUI(self):
         """Configurar la interfaz del menú principal"""
         self.setWindowTitle("Menú Principal")
-        self.setGeometry(100, 100, 500, 400)
+        self.setGeometry(50, 50, 500, 400)
+        self.setMaximumSize(500, 400)
 
         layout = QVBoxLayout()
 
@@ -56,7 +57,9 @@ class MenuWindow(QWidget):
 
         # Inicializar botones del menú
         self.start_button = self.create_button("Jugar (Nivel 1)", self.start_game)
+        self.level_button = self.create_button("Elegir nivel", self.select_level)
         self.profile_button = self.create_button("Crear perfil", self.create_profile)
+        self.challenge_button = self.create_button("Desafío Maestro", self.activate_challenge)
         self.matches_button = self.create_button("Ver partidas", self.show_matches)
         self.top_10_button = self.create_button("Ranking", self.show_top_10)
         self.rules_button = self.create_button("Ver Reglas", self.show_rules)
@@ -64,7 +67,9 @@ class MenuWindow(QWidget):
 
         # Añadir botones al layout
         layout.addWidget(self.start_button)
+        layout.addWidget(self.level_button)
         layout.addWidget(self.profile_button)
+        layout.addWidget(self.challenge_button)
         layout.addWidget(self.matches_button)
         layout.addWidget(self.top_10_button)
         layout.addWidget(self.rules_button)
@@ -88,12 +93,16 @@ class MenuWindow(QWidget):
         
         if user_filled and password_filled:
             self.start_button.setEnabled(True)
+            self.level_button.setEnabled(True)
             self.profile_button.setEnabled(True)
+            self.challenge_button.setEnabled(True)
             self.matches_button.setEnabled(True)
             self.top_10_button.setEnabled(True)
         else:
             self.start_button.setEnabled(False)
+            self.level_button.setEnabled(False)
             self.profile_button.setEnabled(False)
+            self.challenge_button.setEnabled(False)
             self.matches_button.setEnabled(False)
             self.top_10_button.setEnabled(False)
 
@@ -112,7 +121,7 @@ class MenuWindow(QWidget):
             
             # Ahora pasamos ambos username y user_id a GameWindow
             from game import GameWindow
-            self.game_window = GameWindow(user_id=user_id, level=1, username=username)  # Pasar username también
+            self.game_window = GameWindow(user_id=user_id, level=1, username=username, master_mode=False)  # Pasar username también
             self.game_window.show()
             self.close()    
 
@@ -132,9 +141,53 @@ class MenuWindow(QWidget):
             user_id = usuario_dao.obtener_id_usuario(username)
             
             # Pasar username y user_id a GameWindow
-            self.game_window = GameWindow(user_id=user_id, level=1, username=username)
+            self.game_window = GameWindow(user_id=user_id, level=1, username=username, master_mode=False)
             self.game_window.show()
             self.close()
+            
+    def activate_challenge(self):
+        """Iniciar el modo maestro en el nivel 1"""
+        username = self.user_input.text().strip()
+        password = self.password_input.text().strip()
+
+        # Crear una instancia de UsuarioDAO
+        usuario_dao = UsuarioDAO()
+        
+        # Validar usuario
+        if usuario_dao.validar_usuario(username, password):         
+            # Si la validación es exitosa, obtener el ID del usuario
+            user_id = usuario_dao.obtener_id_usuario(username)
+            
+            # Verificar si el usuario ha completado los 11 niveles
+            if usuario_dao.completed_11_levels(user_id):
+                # Si ha completado los niveles, iniciar el Desafío Maestro
+                from game import GameWindow
+                self.game_window = GameWindow(user_id=user_id, level=1, username=username, master_mode=True)
+                self.game_window.show()
+                self.close()
+            else:
+                # Mostrar mensaje de error si no ha completado los niveles
+                QMessageBox.warning(None, "Aún no...", f"No estás listo para este desafío.")
+            
+    def select_level(self):
+        """Mostrar la ventana de selección de nivel"""
+        username = self.user_input.text().strip()
+        password = self.password_input.text().strip()
+        
+        # Crear una instancia de UsuarioDAO
+        usuario_dao = UsuarioDAO()
+        
+        # Validar usuario
+        if usuario_dao.validar_usuario(username, password):
+            user_id = usuario_dao.obtener_id_usuario(username)
+
+            # Abrir la ventana de selección de nivel
+            self.level_window = LevelWindow(username=username, user_id=user_id)
+            self.level_window.show()
+            self.close()
+        else:
+            # Mostrar mensaje de error si la validación falla
+            QMessageBox.warning(self, "Error", "Usuario o contraseña incorrectos.")
 
     def show_matches(self):
         """Mostrar la ventana de selección de partidas"""
@@ -166,8 +219,6 @@ class MenuWindow(QWidget):
         else:
             QMessageBox.warning(self, "Error de Autenticación", "Usuario o contraseña incorrectos.")
 
-    
-
     def show_top_10(self):
         """Mostrar el top 10 de jugadores con mejores puntajes"""
         from dao.partida_dao import PartidaDAO
@@ -193,12 +244,12 @@ class MenuWindow(QWidget):
     
     def disable_buttons(self):
         """Deshabilitar los botones del menú"""
-        for button in [self.start_button, self.profile_button, self.matches_button, self.top_10_button]:
+        for button in [self.start_button, self.level_button, self.profile_button, self.challenge_button, self.matches_button, self.top_10_button]:
             button.setEnabled(False)
     
     def dim_buttons(self):
         """Oscurecer los botones de la ventana del menú"""
-        for i in range(1, 7):  
+        for i in range(1, 9):  
             button = self.layout().itemAt(i).widget()
             button.setStyleSheet(""" 
                 QPushButton {
@@ -222,7 +273,7 @@ class MenuWindow(QWidget):
             
     def reset_buttons(self):
         """Restaurar el estilo original de los botones"""
-        for i in range(1, 7):
+        for i in range(1, 8):
             button = self.layout().itemAt(i).widget()
             button.setStyleSheet(self.original_button_style)
             
@@ -230,7 +281,9 @@ class MenuWindow(QWidget):
         """Habilitar los botones de la ventana del menú"""
         # Solo habilitar botones específicos
         self.start_button.setEnabled(True)
+        self.level_button.setEnabled(True)
         self.profile_button.setEnabled(True)
+        self.challenge_button.setEnabled(True)
         self.matches_button.setEnabled(True)
         self.top_10_button.setEnabled(True)
         
@@ -243,4 +296,5 @@ class MenuWindow(QWidget):
         """Mostrar las reglas del juego"""
         QMessageBox.information(self, "Reglas", 
                                 "1. Ingrese un usuario y contraseña para comenzar el juego. (REGISTRADO)\n"
-                                "2. Encuentra todas las parejas de cartas antes que se acabe el tiempo.")
+                                "2. Encuentra todas las parejas de cartas antes que se acabe el tiempo.\n"
+                                "3. Si completaste los 11 niveles, ¡podrás jugar el Desafío Maestro!")
