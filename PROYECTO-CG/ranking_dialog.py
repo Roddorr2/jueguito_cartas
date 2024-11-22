@@ -5,8 +5,8 @@ class RankingDialog(QDialog):
     def __init__(self, top_10_data, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Ranking de jugadores")
-        self.setGeometry(300, 300, 450, 350)
-        self.setMinimumSize(450, 350)  # Tamaño mínimo del diálogo
+        self.setGeometry(300, 300, 600, 400)
+        self.setMaximumSize(600, 400)
         
         # Crear un layout vertical
         layout = QVBoxLayout()
