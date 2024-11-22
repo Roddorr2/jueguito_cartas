@@ -5,7 +5,7 @@ class RankingWidget(QWidget):
         super().__init__()
         self.setWindowTitle("Ranking de Jugadores")
         self.setGeometry(300, 300, 600, 400)
-        self.setMinimumSize(600, 400)
+        self.setMaximumSize(600, 400)
         
         # Crear layout
         layout = QVBoxLayout()
