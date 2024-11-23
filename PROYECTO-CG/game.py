@@ -9,7 +9,7 @@ from prediccion import Prediccion
 class GameWindow(QMainWindow):
     def __init__(self, user_id, level, username=None, master_mode=False):
         super().__init__()
-        pygame.mixer.init()
+        pygame.mixer.init() 
         self.user_id = user_id
         self.level = level
         self.pairs = level + 1
@@ -291,7 +291,10 @@ class GameWindow(QMainWindow):
         self.user_id = usuario_dao.obtener_id_usuario(self.username)
         
         # Guardar la partida
-        partida_dao.insertar_partida(self.user_id, self.level-1, self.opengl_widget.total_time, 0, self.click_count)
+        if self.level == 1:
+            partida_dao.insertar_partida(self.user_id, 1, self.opengl_widget.total_time, 0, self.click_count)
+        else:
+            partida_dao.insertar_partida(self.user_id, self.level-1, self.opengl_widget.total_time, 0, self.click_count)
         
         # Mostrar mensaje de éxito
         QMessageBox.information(None, "Partida guardada", "Partida guardada con éxito.")
