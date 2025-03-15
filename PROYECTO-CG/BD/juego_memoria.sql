@@ -7,7 +7,6 @@ CREATE DATABASE juego_memoria;
 GO
 USE juego_memoria;
 GO
--- las tablas todavía no están creadas 
 -- Tabla de Usuarios
 CREATE TABLE Usuarios (
     idusuario INT IDENTITY(1,1) PRIMARY KEY,
