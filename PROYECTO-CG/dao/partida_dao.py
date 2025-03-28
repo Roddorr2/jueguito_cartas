@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from dao.conexion import Conexion
+import pandas as pd
 
 class PartidaDAO:
     def __init__(self):
@@ -42,6 +43,67 @@ class PartidaDAO:
             # Imprimir error en consola si ocurre alguna excepción
             print(f"Error al insertar partida en la base de datos: {e}")
             
+    def consultar_partida(self, idusuario, idnivel):
+        """
+        Obtiene si un usuario ha jugado un nivel específico.
+        :param idusuario: ID del usuario.
+        :param idnivel: ID del nivel.
+        :return: True si el usuario ha jugado ese nivel, False si no.
+        """
+        query = """
+            SELECT 1
+            FROM Partidas P
+            INNER JOIN Usuarios U ON P.idusuario = U.idusuario
+            WHERE P.idusuario = ? AND P.idnivel = ?
+        """
+        
+        with self.conn.conn.cursor() as cursor:
+            cursor.execute(query, (idusuario, idnivel))
+            result = cursor.fetchone()
+            
+        return result is not None  # Si se devuelve algo, el usuario ya jugó ese nivel
+      
+    def exportar_datos_a_csv(self, idusuario, file_path):
+        """Exporta los datos de la mejor partida por nivel a un archivo CSV."""
+        query = """
+        WITH MejorPartidaPorNivel AS (
+            SELECT
+                CONCAT('Nivel ', CAST(N.idnivel AS VARCHAR)) AS Nivel,
+                U.username,
+                P.clics,
+                P.tiempo,
+                ROW_NUMBER() OVER (
+                    PARTITION BY N.idnivel
+                    ORDER BY P.clics ASC, P.tiempo ASC
+                ) AS rn
+            FROM Partidas P
+            INNER JOIN Usuarios U ON P.idusuario = U.idusuario
+            INNER JOIN Niveles N ON P.idnivel = N.idnivel
+            WHERE P.idusuario = ? 
+              AND P.resultado = 1
+        )
+        SELECT 
+            Nivel,
+            Username,
+            Clics,
+            CONVERT(VARCHAR, Tiempo, 108) AS Tiempo
+        FROM MejorPartidaPorNivel
+        WHERE rn = 1
+        ORDER BY CAST(SUBSTRING(Nivel, 7, LEN(Nivel)) AS INT);
+        """
+
+        try:
+            # Ejecutar la consulta
+            df = pd.read_sql(query, self.conn.conn, params=[idusuario])
+            
+            # Exportar a CSV
+            df.to_csv(file_path, index=False, encoding='utf-8')
+
+            print(f"Datos exportados exitosamente a {file_path}")
+
+        except Exception as e:
+            print(f"Error al exportar los datos a CSV: {e}")
+
     def mostrar_partidas(self, idusuario):
         """
         Obtiene todas las partidas de un usuario específico y las devuelve en una lista.
@@ -63,7 +125,7 @@ class PartidaDAO:
             partidas = cursor.fetchall()
             
         # Formatear datos si es necesario (e.g., convertir fechas, tiempo a formato adecuado)
-        formatted_partidas = [(partida[0], partida[1].strftime('%Y-%m-%d'), partida[2]) for partida in partidas]
+        formatted_partidas = [(partida[0], partida[1].strftime('%Y-%m-%d'), partida[2], partida[3]) for partida in partidas]
         
         return formatted_partidas
 
@@ -84,7 +146,7 @@ class PartidaDAO:
             FROM Partidas P
             INNER JOIN Usuarios U ON P.idusuario = U.idusuario
             INNER JOIN Niveles N ON P.idnivel = N.idnivel
-            WHERE P.resultado = 1
+            WHERE P.resultado = 1 AND P.idnivel > 1
             ORDER BY P.clics ASC
         """
         
@@ -108,4 +170,3 @@ class PartidaDAO:
         except Exception as e:
             print(f"Error al obtener el top de usuarios: {e}")
             return []
-
